@@ -1,0 +1,24 @@
+Package: NetBenReg
+Title: Net-benefit Regression for Possibly Censored Cost-effectiveness Data 
+Version: 1.0.4
+Date: 2023-07-12
+Author: 
+    person("Shuai", "Chen", , "shschen@ucdavis.edu", role = c("aut", "cre"))
+Maintainer: Shuai Chen <shschen@ucdavis.edu>
+Description: Fit net-benefit regression using simple weighted, partitioned, and doubly robust methods for possibly censored cost-effectiveness data from randomized or observational studies, and create cost-effectiveness acceptability curve plot.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Imports: 
+    dplyr,
+    geepack
+Depends: 
+    R (>= 2.10)
+LazyData: true
