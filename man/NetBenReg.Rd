@@ -10,15 +10,14 @@ NetBenReg(
   group,
   Cost = NULL,
   Eff = NULL,
-  Patition.times = NULL,
+  Part.times = NULL,
   Z = NULL,
   PS.Z = NULL,
   interaction = NULL,
   Method = c("SW", "PT", "CC", "AL"),
   Sep.K = TRUE,
-  PS.trim = 0.05,
+  PS.trim = 0.1,
   Doubly.Robust = FALSE,
-  DR.Reg.SE = TRUE,
   Eff.only = FALSE,
   Cost.only = FALSE,
   lambda = NULL,
@@ -26,47 +25,91 @@ NetBenReg(
 )
 }
 \arguments{
-\item{Followup}{vector containing continuous positive follow-up time of length n.}
+\item{Followup}{a vector containing continuous positive follow-up time of length n.}
 
-\item{delta}{vector containing binary indicator of event (such as death) of length n, 1 - complete, 0 - censored.}
+\item{delta}{a vector containing binary indicator of event (such as death) of length n, 1 - complete, 0 - censored.}
 
-\item{group}{vector containing binary treatment indicator, 1 - considered treatment, 0 - comparison.}
+\item{group}{a vector containing binary treatment indicator, 1 - considered treatment, 0 - comparison.}
 
-\item{Cost}{vector, n x m matrix or dataframe containing observed total or grouped costs, Cost\link{i,j} is observed cost of the ith people accumulated in the jth interval. Can be a vector or a one-column matrix for total costs only.}
+\item{Cost}{a vector, n x m matrix or dataframe containing observed total or grouped costs, Cost\link{i,j} is observed cost of the ith people accumulated in the jth interval. Can be a vector or a one-column matrix for total costs only.}
 
-\item{Eff}{vector, n x m matrix or dataframe containing observed total or grouped costs, Eff\link{i,j} is observed effectiveness of the ith people accumulated in the jth interval. Can be a vector or a one-column matrix for total effectiveness only. If not provided, assume effectiveness is survival.}
+\item{Eff}{a vector, n x m matrix or dataframe containing observed total or grouped costs, Eff\link{i,j} is observed effectiveness of the ith people accumulated in the jth interval. Can be a vector or a one-column matrix for total effectiveness only. If not provided, assume effectiveness is survival.}
 
-\item{Patition.times}{vector of length m, containing end time points (in days) of each time interval. Must be monotonically increasing (eg, 1st interval is Day 1 to Patition.times\link{1}, 2nd is interval Day Patition.times\link{1}+1 to Patition.times\link{2}). Required if using PT method without Eff provided, or truncating grouped costs and effectiveness if they may be partially outside time limit L.}
+\item{Part.times}{a vector of length m, containing end time point of each time interval. Must be monotonically increasing (eg, 1st interval is time [0, Part.times\link{1}], 2nd is (Part.times\link{1}, Part.times\link{2}]). Required if using PT method without Eff provided, or truncating grouped costs and effectiveness if they may be partially outside time limit L.}
 
-\item{Z}{vector, n x p matrix or dataframe containing covariates for net-benefit regression. If not provided, will do unadjusted analysis using simple regression. Defaults to NULL.}
+\item{Z}{a vector, n x p matrix or dataframe containing covariates for net-benefit regression. If not provided, will do unadjusted analysis using simple regression. Defaults to NULL.}
 
-\item{PS.Z}{vector, matrix, or dataframe containing covariates matrix for propensity score model using logistic regression. If not provided, will fit an unadjusted logistic regression (e.g., for randomized studies). Defaults to NULL.}
+\item{PS.Z}{a vector, matrix, or dataframe containing covariates matrix for propensity score model using logistic regression. If not provided, will fit an unadjusted logistic regression (e.g., for randomized studies). Defaults to NULL.}
 
-\item{interaction}{vector containing covariate names to be included in interactions with treatment, must be a subset of variable names in Z, otherwise the variable not in Z will be ignored. Defaults to NULL.}
+\item{interaction}{a vector containing covariate names to be included in interactions with treatment, must be a subset of variable names in Z, otherwise the variable not in Z will be ignored. Defaults to NULL.}
 
-\item{Method}{method for estimation. 'SW' - simple weighted, 'PT' - partitioned, 'CC' - naive complete case only, 'AL' - naive all data ignoring censoring status, doubly robust method requires either 'SW' or 'PT'.}
+\item{Method}{method for estimation. \code{"SW"} - simple weighted, \code{"PT"} - partitioned, \code{"CC"} - naive complete case only, \code{"AL"} - naive all data ignoring censoring status, doubly robust method requires either \code{"SW"} or \code{"PT"}.}
 
 \item{Sep.K}{logical, if TRUE, estimate K (survival function of censoring time, used in inverse probability of censoring weighting) using Kaplan-Meier estimator within each group separately. Defaults to TRUE.}
 
-\item{PS.trim}{value between (0, 0.5) to trim extreme propensity scores outside the range of (PS.trim, 1-PS.trim). Defaults to 0.05.}
+\item{PS.trim}{a value between (0, 0.5) to trim extreme propensity scores outside the range of (PS.trim, 1-PS.trim). Defaults to 0.1.}
 
 \item{Doubly.Robust}{logical, if TRUE, perform doubly robust method. Defaults to FALSE.}
-
-\item{DR.Reg.SE}{logical, if TRUE, report SE (and p-value) for the regression part of doubly robust method, otherwise only coefficient is reported. Defaults to TRUE.}
 
 \item{Eff.only}{logical. If TRUE, fit a regression with dependent variable as effect. Defaults to FALSE.}
 
 \item{Cost.only}{logical. If TRUE, fit a regression with dependent variable as cost. Defaults to FALSE.}
 
-\item{lambda}{vector or scalar containing cost-effectiveness threshold values (e.g., willingness-to-pay for 1 unit of additional effectiveness).}
+\item{lambda}{a vector or scalar containing cost-effectiveness threshold values (e.g., willingness-to-pay for 1 unit of additional effectiveness).}
 
 \item{L}{time limit horizon, used to truncate event time (equivalent to having an event at L if the patient is alive at L), costs and effectiveness if they are outside this time limit, assuming cost and effectiveness are evenly spread within each time interval during truncation.}
 }
 \description{
-This function fits net-benefit regression with possibly censored cost-effectiveness data.
+This function fits net-benefit regression with possibly censored patient-level cost-effectiveness data.
+\itemize{
+\item Allows simple weighted (not using cost/effectiveness history) and partitioned (using cost/effectiveness history) methods, and two naive methods (complete case only, all data ignoring censoring status). Doubly robust method can also be adopted by further including propensity score model.
+\item Subjects with missing values will be excluded during model fitting; however, censoring rate within time horizon is calculated using as many as possible patients.
+}
 }
 \examples{
-NetBenReg()
+data(CEdata)	#load simulated cost-effectiveness data
+lambda <- seq(0,6,0.5)	# choose cost-effectiveness threshold as a sequence from $0 to $6,000 for 1 additional unit of effectiveness
+
+# fit covariate-adjusted net-benefit regression (along with cost-only and effect-only regressions) using SW method, effectiveness is QALY
+# use cost and effectiveness history to better truncate them by L
+fit1 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 	
+	Part.times=1:15, Method='SW', Z=CEdata[,5:7], Eff.only=TRUE, Cost.only=TRUE, lambda=lambda, L=10)
+print(fit1)
+
+# fit unadjusted net-benefit regression (eg, for randomized studies), by removing option Z 
+fit2 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
+Part.times=1:15, Method='SW', Eff.only=TRUE,Cost.only=TRUE, L=10, lambda=lambda)
+print(fit2)
+
+# fit covariate-adjusted regression using SW method, effectiveness is life years
+fit3 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=NULL,
+Part.times=1:15, Method='SW', Z=CEdata[,5:7], Eff.only=TRUE, lambda=lambda, L=10)
+print(fit3)
+
+# fit covariate-adjusted regression using PT method with QALY as effectiveness
+fit4<-NetBenReg(Followup=CEdata$survival,delta=CEdata$dead,group=CEdata$Trt,Cost=CEdata[,8:22],Eff=CEdata[,24:38],
+Part.times=1:15,Method='PT',Z=CEdata[,5:7], Eff.only=TRUE,lambda=lambda,L=10)
+print(fit4)
+
+# (dataset with unequal time intervals) assume cost.1 (QALY.1) is cost/QALY in first 2 years, cost.2 (QALY.2) and cost.3 (QALY.3) are cost/QALY in the following 6 months
+# other time intervals keep the same
+# set intervals as [0,2],(2,2.5],(2.5,3],(3,4],...,(14,15] using Part.times option
+fit5<-NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
+Part.times=c(2,2.5,3:15), Method='PT', Z=CEdata[,5:7], Eff.only=TRUE, lambda=lambda, L=10)
+print(fit5)
+
+# fit covariate-adjusted regression with interactions between treatment and covariates  #######
+# include both Treatment by LBBB and Treatment by Female interactions 
+fit6 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
+Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB","Female"), Eff.only=TRUE, lambda=lambda, L=10)
+print(fit6)
+
+# Doubly robust PT regression with Treatment by LBBB interaction to estimate causal average incremental net benefit (INB)
+# all three covariates are used to estimate propensity scores by logistic regression
+fit7 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38],
+Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB"), PS.Z=CEdata[,5:7],	Doubly.Robust=TRUE,
+Eff.only=TRUE, lambda=lambda, L=10)
+print(fit7)
 }
 \keyword{censoring}
 \keyword{net-benefit}

@@ -7,14 +7,14 @@
 KM(X, delta)
 }
 \arguments{
-\item{X}{vector containing continuous positive follow-up time.}
+\item{X}{a vector containing continuous positive follow-up time.}
 
-\item{delta}{vector containing binary indicator of event, 1 - complete, 0 - censored.}
+\item{delta}{a vector containing binary indicator of event, 1 - complete, 0 - censored.}
+}
+\value{
+a vector containing the survival probability at each follow-up time
 }
 \description{
-This function estimates the survival probability using Kaplan-Meier method, used to calculate weights of inverse probability of censoring.
-}
-\examples{
-KM()
+This function estimates the survival probability using Kaplan-Meier method, assuming censoring is not covariate-dependent. used to calculate weights of inverse probability of censoring.
 }
 \keyword{Kaplan-Meier}
