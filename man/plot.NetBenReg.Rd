@@ -43,20 +43,21 @@
 \item{...}{other arguments that will be passed forward to the underlying plot.default method.}
 }
 \description{
-This function creates cost-effectiveness acceptability curve (CEAC) plot based on the fitted net-benefit regression.
+Creating cost-effectiveness acceptability curve (CEAC) plot based on the fitted net-benefit regression.
 }
 \examples{
 data(CEdata)
+lambda=seq(0,6,0.5)
 
 # for non-DR method without interaction or DR method, one curve for overall
 fit1 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38],
-Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB"), PS.Z=CEdata[,5:7],	Doubly.Robust=TRUE,
-Eff.only=TRUE, lambda=lambda, L=10)
+	Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB"), PS.Z=CEdata[,5:7],	Doubly.Robust=TRUE,
+	Eff.only=TRUE, lambda=lambda, L=10)
 plot(fit1,ylab="Probability new treatment is cost-effective",xlab="Cost-effectiveness threshold (in $1000) for one additional QALY",lwd=2, pch=19,cex=1.2)
 
 # for non-DR method with interaction, one curve for each subgroup defined by interactions
 fit2 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
-Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB","female"), Eff.only=TRUE, lambda=lambda, L=10)
+	Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB","female"), Eff.only=TRUE, lambda=lambda, L=10)
 plot(fit2,subgroup=list(LBBB=0,female=0),add=TRUE,col="gray50",lwd=2,lty=2,pch=15,cex=1.2)		#subgroup of non-LBBB male, adjusted for age
 plot(fit2,subgroup=list(LBBB=1,female=1),add=TRUE,col="gray50",lwd=2,lty=3,pch=17,cex=1.2)		#subgroup of LBBB female, adjusted for age 
 }

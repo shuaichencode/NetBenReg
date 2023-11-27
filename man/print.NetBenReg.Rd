@@ -10,12 +10,12 @@
 \item{object}{a fitted "NetBenReg" model object.}
 }
 \description{
-This function prints the summary results of fitted net-benefit regression (non-doubly robust method).
+Printing the summary results of the fitted net-benefit regression.
 }
 \examples{
 data(CEdata)	
 fit1 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 	
-	Part.times=1:15, Method='SW', Z=CEdata[,5:7], Eff.only=TRUE, Cost.only=TRUE, lambda=seq(0,6,0.5), L=10)
+	Part.times=1:15, Method='SW', Z=CEdata[,5:7], Eff.only=TRUE, Cost.only=TRUE, lambda=seq(0,6,3), L=10)
 print(fit1)
 }
 \keyword{net-benefit}

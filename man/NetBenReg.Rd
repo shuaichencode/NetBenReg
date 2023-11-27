@@ -59,57 +59,54 @@ NetBenReg(
 
 \item{L}{time limit horizon, used to truncate event time (equivalent to having an event at L if the patient is alive at L), costs and effectiveness if they are outside this time limit, assuming cost and effectiveness are evenly spread within each time interval during truncation.}
 }
+\value{
+A fitted \code{NetBenReg} object, which is a list with each element corresponding to the results for a \code{lambda} value. For example, if the fitted object is \code{fit}, then \code{fit[[1]]} is a list containing results for the 1st element in \code{lambda}. Similarly, \code{fit[[2]]} is a list containing results for the 2nd element in \code{lambda}. If \code{Eff.only=TRUE} and/or \code{Cost.only=TRUE}, the last 1 (or 2) element(s) are for effectiveness-only and/or cost-only regressions. The following describes the components saved in each element (e.g., \code{fit[[1]]}) for each lambda value.
+\item{Method}{method for estimation.}
+\item{lambda}{value of cost-effectiveness threshold.}
+\item{Reg.type}{type of the regression model (NBR, Effect, or Cost).}
+\item{est}{vector or scalar containing estimates for coefficients or causal average INB.}
+\item{se}{vector or scalar containing standard error estimates for coefficients or causal average INB.}
+\item{covariance}{covariance matrix for coefficient estimates in net benefit regression for non-doubly robust methods.}
+\item{coef.table}{dataframe for the table of coefficients or causal average INB (estimate, standard error, Wald test statistic, and p-value).}
+\item{CEAC}{CEAC value for the given lambda value, provided for doubly robust method and net benefit regressions without interaction, but not provided for net benefit regressions with interaction due to heterogeneous cost-effectiveness across subgroups.}
+\item{int.name}{vector containing covariate names in the interactions, only provided for non-doubly robust method.}
+\item{covar1st}{an example dataframe containing covariates for the 1st patient, only provided for non-doubly robust method.}
+\item{Regmodel}{coefficient table for the part of net benefit regression, only provided for doubly robust method.}
+\item{PSmodel}{coefficient table for the part of propensity score model using logistic regression, only provided for doubly robust method.}
+\item{PS}{estimated propensity scores, only provided for doubly robust method.}
+\item{group}{vector containing treatment group indicator, only provided for doubly robust method.}
+}
 \description{
-This function fits net-benefit regression with possibly censored patient-level cost-effectiveness data.
+Fitting net-benefit regression with possibly censored patient-level cost-effectiveness data.
 \itemize{
-\item Allows simple weighted (not using cost/effectiveness history) and partitioned (using cost/effectiveness history) methods, and two naive methods (complete case only, all data ignoring censoring status). Doubly robust method can also be adopted by further including propensity score model.
+\item Allows simple weighted (not using cost/effectiveness history), partitioned (using cost/effectiveness history) methods, and two naive methods (complete case only, all data ignoring censoring status). Doubly robust method can also be adopted by further including propensity score model.
 \item Subjects with missing values will be excluded during model fitting; however, censoring rate within time horizon is calculated using as many as possible patients.
 }
 }
 \examples{
 data(CEdata)	#load simulated cost-effectiveness data
-lambda <- seq(0,6,0.5)	# choose cost-effectiveness threshold as a sequence from $0 to $6,000 for 1 additional unit of effectiveness
+lambda <- seq(0,6,3)	# choose cost-effectiveness threshold as a sequence from $0 to $6,000 for 1 additional unit of effectiveness
 
-# fit covariate-adjusted net-benefit regression (along with cost-only and effect-only regressions) using SW method, effectiveness is QALY
-# use cost and effectiveness history to better truncate them by L
-fit1 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 	
-	Part.times=1:15, Method='SW', Z=CEdata[,5:7], Eff.only=TRUE, Cost.only=TRUE, lambda=lambda, L=10)
+# fit covariate-adjusted regression using SW method with quality-adjusted life years (QALY) as effectiveness
+fit1<-NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38],
+	Part.times=1:15, Method='SW',Z=CEdata[,5:7], Eff.only=TRUE, Cost.only=TRUE, lambda=lambda, L=10)
 print(fit1)
 
-# fit unadjusted net-benefit regression (eg, for randomized studies), by removing option Z 
-fit2 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
-Part.times=1:15, Method='SW', Eff.only=TRUE,Cost.only=TRUE, L=10, lambda=lambda)
+# fit covariate-adjusted regression with interactions between treatment and covariates 
+# use SW method with life years as effectiveness by removing Eff option
+fit2 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], 
+	Part.times=1:15, Method='SW', Z=CEdata[,5:7], interaction=c("LBBB","Female"), Eff.only=TRUE, lambda=lambda, L=10)
 print(fit2)
-
-# fit covariate-adjusted regression using SW method, effectiveness is life years
-fit3 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=NULL,
-Part.times=1:15, Method='SW', Z=CEdata[,5:7], Eff.only=TRUE, lambda=lambda, L=10)
-print(fit3)
-
-# fit covariate-adjusted regression using PT method with QALY as effectiveness
-fit4<-NetBenReg(Followup=CEdata$survival,delta=CEdata$dead,group=CEdata$Trt,Cost=CEdata[,8:22],Eff=CEdata[,24:38],
-Part.times=1:15,Method='PT',Z=CEdata[,5:7], Eff.only=TRUE,lambda=lambda,L=10)
-print(fit4)
-
-# (dataset with unequal time intervals) assume cost.1 (QALY.1) is cost/QALY in first 2 years, cost.2 (QALY.2) and cost.3 (QALY.3) are cost/QALY in the following 6 months
-# other time intervals keep the same
-# set intervals as [0,2],(2,2.5],(2.5,3],(3,4],...,(14,15] using Part.times option
-fit5<-NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
-Part.times=c(2,2.5,3:15), Method='PT', Z=CEdata[,5:7], Eff.only=TRUE, lambda=lambda, L=10)
-print(fit5)
-
-# fit covariate-adjusted regression with interactions between treatment and covariates  #######
-# include both Treatment by LBBB and Treatment by Female interactions 
-fit6 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38], 
-Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB","Female"), Eff.only=TRUE, lambda=lambda, L=10)
-print(fit6)
 
 # Doubly robust PT regression with Treatment by LBBB interaction to estimate causal average incremental net benefit (INB)
 # all three covariates are used to estimate propensity scores by logistic regression
-fit7 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38],
-Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB"), PS.Z=CEdata[,5:7],	Doubly.Robust=TRUE,
-Eff.only=TRUE, lambda=lambda, L=10)
-print(fit7)
+fit3 <- NetBenReg(Followup=CEdata$survival, delta=CEdata$dead, group=CEdata$Trt, Cost=CEdata[,8:22], Eff=CEdata[,24:38],
+	Part.times=1:15, Method='PT', Z=CEdata[,5:7], interaction=c("LBBB"), PS.Z=CEdata[,5:7],	Doubly.Robust=TRUE,
+	Eff.only=TRUE, lambda=lambda, L=10)
+print(fit3)
+
+# Saved results for the 1st lambda value
+fit3[[1]]$coef.table
 }
 \keyword{censoring}
 \keyword{net-benefit}
